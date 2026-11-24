@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend Lint & Pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install ".[dev]"
+      - name: Lint with Ruff
+        run: ruff check app tests
+      - name: Run pytest
+        run: pytest -v
+
+  frontend:
+    name: Frontend Lint, Type-Check & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm install
+      - name: Lint with ESLint
+        run: npm run lint
+      - name: Type-check with TypeScript
+        run: npm run typecheck
+      - name: Run Vitest
+        run: npm test
+
+  docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t mini-gauntlet-api:ci ./backend
+      - name: Build Dashboard image
+        run: docker build -t mini-gauntlet-dashboard:ci ./frontend
