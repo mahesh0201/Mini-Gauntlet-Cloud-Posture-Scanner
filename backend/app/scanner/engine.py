@@ -1,11 +1,11 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
 import json
 import logging
-from pathlib import Path
 import time
-from typing import Any, Optional
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
 
 import app.scanner.checks  # noqa: F401  # Ensures all checks register at import time
 from app.scanner.registry import registry
@@ -54,7 +54,8 @@ def scan_account(account: dict[str, Any], snapshot_at: datetime) -> list[dict[st
         meta = reg_check.meta
         collection = meta.collection
 
-        # Rule 1: collection listed in errors -> one CANNOT_SCAN finding per check with no resource_id
+        # Rule 1: collection listed in errors -> one CANNOT_SCAN finding per check
+        # with no resource_id
         if collection in errors:
             err_code = str(errors[collection])
             logger.warning(
@@ -103,7 +104,9 @@ def scan_account(account: dict[str, Any], snapshot_at: datetime) -> list[dict[st
                     "resource_id": None,
                     "status": "CANNOT_SCAN",
                     "severity": meta.severity,
-                    "details": f"Malformed collection '{collection}': expected a list of resources.",
+                    "details": (
+                        f"Malformed collection '{collection}': expected a list of resources."
+                    ),
                 }
             )
             continue
@@ -128,7 +131,9 @@ def scan_account(account: dict[str, Any], snapshot_at: datetime) -> list[dict[st
                         "resource_id": None,
                         "status": "CANNOT_SCAN",
                         "severity": meta.severity,
-                        "details": f"Malformed resource entry at index {idx}: expected JSON object.",
+                        "details": (
+                            f"Malformed resource entry at index {idx}: expected JSON object."
+                        ),
                     }
                 )
                 continue
@@ -158,7 +163,9 @@ def scan_account(account: dict[str, Any], snapshot_at: datetime) -> list[dict[st
                         "resource_id": None,
                         "status": "CANNOT_SCAN",
                         "severity": meta.severity,
-                        "details": f"Missing required resource identifier '{meta.resource_id_field}'.",
+                        "details": (
+                            f"Missing required resource identifier '{meta.resource_id_field}'."
+                        ),
                     }
                 )
                 continue

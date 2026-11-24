@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from app.models import FindingResult
 from app.scanner.registry import registry
@@ -65,7 +65,10 @@ def check_aws_s3_01(resource: dict[str, Any], snapshot_at: datetime) -> FindingR
     if pab is None:
         return FindingResult(
             status="FAIL",
-            details="Public access block configuration is missing (null); bucket allows public access settings.",
+            details=(
+                "Public access block configuration is missing (null); "
+                "bucket allows public access settings."
+            ),
         )
     if not isinstance(pab, dict):
         return FindingResult(
@@ -158,7 +161,8 @@ def check_aws_ec2_01(resource: dict[str, Any], snapshot_at: datetime) -> Finding
                 )
             port_label = f"{from_port}" if from_port == to_port else f"{from_port}-{to_port}"
         else:
-            # Other protocols (e.g., UDP 53, ICMP) do not expose TCP SSH/RDP, but still validate numeric ports if present
+            # Other protocols (e.g., UDP 53, ICMP) do not expose TCP SSH/RDP,
+            # but still validate numeric ports if present
             if from_port is not None or to_port is not None:
                 try:
                     _port_range_exposes_sensitive(from_port, to_port)
@@ -171,8 +175,10 @@ def check_aws_ec2_01(resource: dict[str, Any], snapshot_at: datetime) -> Finding
 
         if exposed_cidrs and exposed_ports:
             ports_txt = "/".join(str(p) for p in exposed_ports)
+            cidrs_txt = ", ".join(exposed_cidrs)
             violations.append(
-                f"Ingress rule {idx} (protocol={proto_str}, ports={port_label}) exposes port {ports_txt} to {', '.join(exposed_cidrs)}"
+                f"Ingress rule {idx} (protocol={proto_str}, ports={port_label}) "
+                f"exposes port {ports_txt} to {cidrs_txt}"
             )
 
     if violations:
@@ -383,7 +389,9 @@ def check_az_nsg_01(resource: dict[str, Any], snapshot_at: datetime) -> FindingR
         if exposed_ports:
             ports_txt = "/".join(str(p) for p in exposed_ports)
             violations.append(
-                f"Inbound Allow rule '{rule_name}' (protocol={protocol}, ports={dest_ports}, source={source}) exposes port {ports_txt}"
+                f"Inbound Allow rule '{rule_name}' "
+                f"(protocol={protocol}, ports={dest_ports}, source={source}) "
+                f"exposes port {ports_txt}"
             )
 
     if violations:
@@ -479,13 +487,21 @@ def check_gcp_vpc_01(resource: dict[str, Any], snapshot_at: datetime) -> Finding
     disabled = resource.get("disabled")
     allowed = resource.get("allowed")
 
-    if not isinstance(direction, str) or not isinstance(disabled, bool) or not isinstance(allowed, list):
+    if (
+        not isinstance(direction, str)
+        or not isinstance(disabled, bool)
+        or not isinstance(allowed, list)
+    ):
         return FindingResult(
             status="CANNOT_SCAN",
-            details="Malformed firewall rule fields: direction (str), disabled (bool), allowed (list) required.",
+            details=(
+                "Malformed firewall rule fields: "
+                "direction (str), disabled (bool), allowed (list) required."
+            ),
         )
 
-    # Validate allowed entries even on disabled/egress rules so corrupt configs still surface CANNOT_SCAN
+    # Validate allowed entries even on disabled/egress rules so corrupt configs
+    # still surface CANNOT_SCAN
     exposed_ports_found: list[int] = []
     matched_protos: list[str] = []
     for idx, entry in enumerate(allowed):

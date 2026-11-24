@@ -1,4 +1,5 @@
 from typing import Literal, Optional
+
 from pydantic import BaseModel
 
 StatusType = Literal["PASS", "FAIL", "CANNOT_SCAN"]

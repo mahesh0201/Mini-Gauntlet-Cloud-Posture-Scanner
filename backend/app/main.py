@@ -1,12 +1,13 @@
+import logging
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-import logging
 from typing import Optional
-import uuid
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+import app.scanner.checks  # noqa: F401
 from app.config import get_db_path, get_inventory_path, get_worker_limit
 from app.database import (
     complete_scan_record,
@@ -24,7 +25,6 @@ from app.models import (
     ScanDetail,
     ScanSummary,
 )
-import app.scanner.checks  # noqa: F401
 from app.scanner.engine import load_inventory, run_snapshot_scan
 from app.scanner.registry import registry
 
@@ -106,7 +106,8 @@ def start_scan(
     try:
         inventory_data = load_inventory(get_inventory_path())
     except Exception as exc:
-        # If inventory cannot be read at trigger time, still record a FAILED scan or validate accounts
+        # If inventory cannot be read at trigger time,
+        # still record a FAILED scan or validate accounts
         if payload and payload.account_ids:
             raise HTTPException(status_code=422, detail=f"Unable to validate account_ids: {exc}")
         scan_id = str(uuid.uuid4())

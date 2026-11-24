@@ -88,7 +88,10 @@ def create_scan_record(
     try:
         conn.execute(
             """
-            INSERT INTO scans (id, status, started_at, finished_at, account_ids_json, account_meta_json, error_message)
+            INSERT INTO scans (
+                id, status, started_at, finished_at,
+                account_ids_json, account_meta_json, error_message
+            )
             VALUES (?, 'RUNNING', ?, NULL, ?, ?, NULL)
             """,
             (scan_id, started_at, json.dumps(account_ids), json.dumps(account_meta)),
@@ -173,9 +176,7 @@ def _status_counts_for_scan(conn: sqlite3.Connection, scan_id: str) -> dict[str,
 def list_scans(db_path: Optional[Path] = None) -> list[dict[str, Any]]:
     conn = get_connection(db_path)
     try:
-        rows = conn.execute(
-            "SELECT * FROM scans ORDER BY started_at DESC, rowid DESC"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM scans ORDER BY started_at DESC, rowid DESC").fetchall()
         results = []
         for row in rows:
             counts = _status_counts_for_scan(conn, row["id"])
@@ -210,9 +211,7 @@ def get_scan_detail(scan_id: str, db_path: Optional[Path] = None) -> Optional[di
 
         counts = _status_counts_for_scan(conn, scan_id)
         score = (
-            compute_score(counts["PASS"], counts["FAIL"])
-            if row["status"] == "COMPLETED"
-            else None
+            compute_score(counts["PASS"], counts["FAIL"]) if row["status"] == "COMPLETED" else None
         )
 
         fail_sev = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
@@ -249,9 +248,7 @@ def get_scan_detail(scan_id: str, db_path: Optional[Path] = None) -> Optional[di
             aid = meta["account_id"]
             ac = per_acc_counts.get(aid, {"PASS": 0, "FAIL": 0, "CANNOT_SCAN": 0})
             acc_score = (
-                compute_score(ac["PASS"], ac["FAIL"])
-                if row["status"] == "COMPLETED"
-                else None
+                compute_score(ac["PASS"], ac["FAIL"]) if row["status"] == "COMPLETED" else None
             )
             accounts_out.append(
                 {

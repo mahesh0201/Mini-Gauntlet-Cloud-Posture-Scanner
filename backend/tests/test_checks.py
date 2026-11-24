@@ -1,6 +1,6 @@
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-import time
 
 from app.scanner.checks import (
     check_aws_ec2_01,
@@ -20,18 +20,21 @@ SNAPSHOT_AT = datetime(2026, 10, 1, 0, 0, 0, tzinfo=timezone.utc)
 
 
 def test_aws_s3_01_pass_fail_cannot_scan():
-    assert check_aws_s3_01(
-        {
-            "name": "ok",
-            "public_access_block": {
-                "block_public_acls": True,
-                "ignore_public_acls": True,
-                "block_public_policy": True,
-                "restrict_public_buckets": True,
+    assert (
+        check_aws_s3_01(
+            {
+                "name": "ok",
+                "public_access_block": {
+                    "block_public_acls": True,
+                    "ignore_public_acls": True,
+                    "block_public_policy": True,
+                    "restrict_public_buckets": True,
+                },
             },
-        },
-        SNAPSHOT_AT,
-    ).status == "PASS"
+            SNAPSHOT_AT,
+        ).status
+        == "PASS"
+    )
 
     fail_null = check_aws_s3_01({"name": "open", "public_access_block": None}, SNAPSHOT_AT)
     assert fail_null.status == "FAIL"
@@ -57,13 +60,18 @@ def test_aws_s3_01_pass_fail_cannot_scan():
 
 def test_aws_ec2_01_edge_cases():
     # PASS: HTTPS only
-    assert check_aws_ec2_01(
-        {
-            "group_id": "sg-1",
-            "ingress": [{"protocol": "tcp", "from_port": 443, "to_port": 443, "cidrs": ["0.0.0.0/0"]}],
-        },
-        SNAPSHOT_AT,
-    ).status == "PASS"
+    assert (
+        check_aws_ec2_01(
+            {
+                "group_id": "sg-1",
+                "ingress": [
+                    {"protocol": "tcp", "from_port": 443, "to_port": 443, "cidrs": ["0.0.0.0/0"]}
+                ],
+            },
+            SNAPSHOT_AT,
+        ).status
+        == "PASS"
+    )
 
     # FAIL: IPv6 ::/0 SSH
     fail_ipv6 = check_aws_ec2_01(
@@ -80,7 +88,9 @@ def test_aws_ec2_01_edge_cases():
     fail_range = check_aws_ec2_01(
         {
             "group_id": "sg-3",
-            "ingress": [{"protocol": "tcp", "from_port": 3000, "to_port": 3500, "cidrs": ["0.0.0.0/0"]}],
+            "ingress": [
+                {"protocol": "tcp", "from_port": 3000, "to_port": 3500, "cidrs": ["0.0.0.0/0"]}
+            ],
         },
         SNAPSHOT_AT,
     )
@@ -91,7 +101,9 @@ def test_aws_ec2_01_edge_cases():
     fail_all = check_aws_ec2_01(
         {
             "group_id": "sg-4",
-            "ingress": [{"protocol": "-1", "from_port": None, "to_port": None, "cidrs": ["0.0.0.0/0"]}],
+            "ingress": [
+                {"protocol": "-1", "from_port": None, "to_port": None, "cidrs": ["0.0.0.0/0"]}
+            ],
         },
         SNAPSHOT_AT,
     )
@@ -101,7 +113,14 @@ def test_aws_ec2_01_edge_cases():
     bad = check_aws_ec2_01(
         {
             "group_id": "sg-bad",
-            "ingress": [{"protocol": "tcp", "from_port": "twenty-two", "to_port": 22, "cidrs": ["0.0.0.0/0"]}],
+            "ingress": [
+                {
+                    "protocol": "tcp",
+                    "from_port": "twenty-two",
+                    "to_port": 22,
+                    "cidrs": ["0.0.0.0/0"],
+                }
+            ],
         },
         SNAPSHOT_AT,
     )
@@ -109,18 +128,30 @@ def test_aws_ec2_01_edge_cases():
 
 
 def test_aws_iam_01_mfa():
-    assert check_aws_iam_01(
-        {"user_name": "alice", "console_access": True, "mfa_enabled": True}, SNAPSHOT_AT
-    ).status == "PASS"
-    assert check_aws_iam_01(
-        {"user_name": "bot", "console_access": False, "mfa_enabled": False}, SNAPSHOT_AT
-    ).status == "PASS"
-    assert check_aws_iam_01(
-        {"user_name": "bob", "console_access": True, "mfa_enabled": False}, SNAPSHOT_AT
-    ).status == "FAIL"
-    assert check_aws_iam_01(
-        {"user_name": "bad", "console_access": "yes", "mfa_enabled": False}, SNAPSHOT_AT
-    ).status == "CANNOT_SCAN"
+    assert (
+        check_aws_iam_01(
+            {"user_name": "alice", "console_access": True, "mfa_enabled": True}, SNAPSHOT_AT
+        ).status
+        == "PASS"
+    )
+    assert (
+        check_aws_iam_01(
+            {"user_name": "bot", "console_access": False, "mfa_enabled": False}, SNAPSHOT_AT
+        ).status
+        == "PASS"
+    )
+    assert (
+        check_aws_iam_01(
+            {"user_name": "bob", "console_access": True, "mfa_enabled": False}, SNAPSHOT_AT
+        ).status
+        == "FAIL"
+    )
+    assert (
+        check_aws_iam_01(
+            {"user_name": "bad", "console_access": "yes", "mfa_enabled": False}, SNAPSHOT_AT
+        ).status
+        == "CANNOT_SCAN"
+    )
 
 
 def test_aws_iam_02_exact_90_days():
@@ -128,7 +159,9 @@ def test_aws_iam_02_exact_90_days():
     exact_90 = check_aws_iam_02(
         {
             "user_name": "ci-deployer",
-            "access_keys": [{"key_id": "k1", "status": "Active", "created_at": "2026-07-03T00:00:00Z"}],
+            "access_keys": [
+                {"key_id": "k1", "status": "Active", "created_at": "2026-07-03T00:00:00Z"}
+            ],
         },
         SNAPSHOT_AT,
     )
@@ -138,7 +171,9 @@ def test_aws_iam_02_exact_90_days():
     day_91 = check_aws_iam_02(
         {
             "user_name": "reporting-bot",
-            "access_keys": [{"key_id": "k2", "status": "Active", "created_at": "2026-07-02T00:00:00Z"}],
+            "access_keys": [
+                {"key_id": "k2", "status": "Active", "created_at": "2026-07-02T00:00:00Z"}
+            ],
         },
         SNAPSHOT_AT,
     )
@@ -149,7 +184,9 @@ def test_aws_iam_02_exact_90_days():
     inactive = check_aws_iam_02(
         {
             "user_name": "former",
-            "access_keys": [{"key_id": "k3", "status": "Inactive", "created_at": "2023-01-01T00:00:00Z"}],
+            "access_keys": [
+                {"key_id": "k3", "status": "Inactive", "created_at": "2023-01-01T00:00:00Z"}
+            ],
         },
         SNAPSHOT_AT,
     )
@@ -167,14 +204,31 @@ def test_aws_iam_02_exact_90_days():
 
 
 def test_aws_rds_01():
-    assert check_aws_rds_01({"db_instance_id": "db1", "publicly_accessible": False}, SNAPSHOT_AT).status == "PASS"
-    assert check_aws_rds_01({"db_instance_id": "db2", "publicly_accessible": True}, SNAPSHOT_AT).status == "FAIL"
-    assert check_aws_rds_01({"db_instance_id": "db3", "publicly_accessible": "no"}, SNAPSHOT_AT).status == "CANNOT_SCAN"
+    assert (
+        check_aws_rds_01(
+            {"db_instance_id": "db1", "publicly_accessible": False}, SNAPSHOT_AT
+        ).status
+        == "PASS"
+    )
+    assert (
+        check_aws_rds_01({"db_instance_id": "db2", "publicly_accessible": True}, SNAPSHOT_AT).status
+        == "FAIL"
+    )
+    assert (
+        check_aws_rds_01({"db_instance_id": "db3", "publicly_accessible": "no"}, SNAPSHOT_AT).status
+        == "CANNOT_SCAN"
+    )
 
 
 def test_az_stg_01():
-    assert check_az_stg_01({"name": "s1", "allow_blob_public_access": False}, SNAPSHOT_AT).status == "PASS"
-    assert check_az_stg_01({"name": "s2", "allow_blob_public_access": True}, SNAPSHOT_AT).status == "FAIL"
+    assert (
+        check_az_stg_01({"name": "s1", "allow_blob_public_access": False}, SNAPSHOT_AT).status
+        == "PASS"
+    )
+    assert (
+        check_az_stg_01({"name": "s2", "allow_blob_public_access": True}, SNAPSHOT_AT).status
+        == "FAIL"
+    )
     assert check_az_stg_01({"name": "s3"}, SNAPSHOT_AT).status == "CANNOT_SCAN"
 
 
@@ -247,49 +301,88 @@ def test_az_nsg_01_deny_outbound_and_ranges():
 
 
 def test_gcp_gcs_01_and_02():
-    assert check_gcp_gcs_01(
-        {"name": "b1", "iam_bindings": [{"role": "roles/storage.objectViewer", "members": ["user:a@b.com"]}]},
-        SNAPSHOT_AT,
-    ).status == "PASS"
-    assert check_gcp_gcs_01(
-        {"name": "b2", "iam_bindings": [{"role": "roles/storage.objectViewer", "members": ["allUsers"]}]},
-        SNAPSHOT_AT,
-    ).status == "FAIL"
-    assert check_gcp_gcs_01(
-        {"name": "b3", "iam_bindings": [{"role": "roles/storage.objectViewer", "members": ["allAuthenticatedUsers"]}]},
-        SNAPSHOT_AT,
-    ).status == "FAIL"
-    assert check_gcp_gcs_01({"name": "b4", "iam_bindings": "bad"}, SNAPSHOT_AT).status == "CANNOT_SCAN"
+    assert (
+        check_gcp_gcs_01(
+            {
+                "name": "b1",
+                "iam_bindings": [
+                    {"role": "roles/storage.objectViewer", "members": ["user:a@b.com"]}
+                ],
+            },
+            SNAPSHOT_AT,
+        ).status
+        == "PASS"
+    )
+    assert (
+        check_gcp_gcs_01(
+            {
+                "name": "b2",
+                "iam_bindings": [{"role": "roles/storage.objectViewer", "members": ["allUsers"]}],
+            },
+            SNAPSHOT_AT,
+        ).status
+        == "FAIL"
+    )
+    assert (
+        check_gcp_gcs_01(
+            {
+                "name": "b3",
+                "iam_bindings": [
+                    {"role": "roles/storage.objectViewer", "members": ["allAuthenticatedUsers"]}
+                ],
+            },
+            SNAPSHOT_AT,
+        ).status
+        == "FAIL"
+    )
+    assert (
+        check_gcp_gcs_01({"name": "b4", "iam_bindings": "bad"}, SNAPSHOT_AT).status == "CANNOT_SCAN"
+    )
 
-    assert check_gcp_gcs_02({"name": "b1", "uniform_bucket_level_access": True}, SNAPSHOT_AT).status == "PASS"
-    assert check_gcp_gcs_02({"name": "b2", "uniform_bucket_level_access": False}, SNAPSHOT_AT).status == "FAIL"
-    assert check_gcp_gcs_02({"name": "b3", "uniform_bucket_level_access": "true"}, SNAPSHOT_AT).status == "CANNOT_SCAN"
+    assert (
+        check_gcp_gcs_02({"name": "b1", "uniform_bucket_level_access": True}, SNAPSHOT_AT).status
+        == "PASS"
+    )
+    assert (
+        check_gcp_gcs_02({"name": "b2", "uniform_bucket_level_access": False}, SNAPSHOT_AT).status
+        == "FAIL"
+    )
+    assert (
+        check_gcp_gcs_02({"name": "b3", "uniform_bucket_level_access": "true"}, SNAPSHOT_AT).status
+        == "CANNOT_SCAN"
+    )
 
 
 def test_gcp_vpc_01_disabled_and_egress():
     # Disabled rule -> PASS
-    assert check_gcp_vpc_01(
-        {
-            "name": "disabled-all",
-            "direction": "INGRESS",
-            "disabled": True,
-            "source_ranges": ["0.0.0.0/0"],
-            "allowed": [{"IPProtocol": "all"}],
-        },
-        SNAPSHOT_AT,
-    ).status == "PASS"
+    assert (
+        check_gcp_vpc_01(
+            {
+                "name": "disabled-all",
+                "direction": "INGRESS",
+                "disabled": True,
+                "source_ranges": ["0.0.0.0/0"],
+                "allowed": [{"IPProtocol": "all"}],
+            },
+            SNAPSHOT_AT,
+        ).status
+        == "PASS"
+    )
 
     # Egress rule -> PASS
-    assert check_gcp_vpc_01(
-        {
-            "name": "egress-ssh",
-            "direction": "EGRESS",
-            "disabled": False,
-            "destination_ranges": ["0.0.0.0/0"],
-            "allowed": [{"IPProtocol": "tcp", "ports": ["22"]}],
-        },
-        SNAPSHOT_AT,
-    ).status == "PASS"
+    assert (
+        check_gcp_vpc_01(
+            {
+                "name": "egress-ssh",
+                "direction": "EGRESS",
+                "disabled": False,
+                "destination_ranges": ["0.0.0.0/0"],
+                "allowed": [{"IPProtocol": "tcp", "ports": ["22"]}],
+            },
+            SNAPSHOT_AT,
+        ).status
+        == "PASS"
+    )
 
     # Active ingress RDP -> FAIL
     fail_rdp = check_gcp_vpc_01(

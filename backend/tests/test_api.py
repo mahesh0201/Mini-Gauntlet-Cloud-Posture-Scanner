@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import time
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -84,8 +84,16 @@ def test_scan_lifecycle_filtering_pagination_and_na_score(monkeypatch, tmp_path:
                         "errors": {},
                         "resources": {
                             "storage_accounts": [
-                                {"name": "stg1", "region": "eastus", "allow_blob_public_access": False},
-                                {"name": "stg2", "region": "eastus", "allow_blob_public_access": True},
+                                {
+                                    "name": "stg1",
+                                    "region": "eastus",
+                                    "allow_blob_public_access": False,
+                                },
+                                {
+                                    "name": "stg2",
+                                    "region": "eastus",
+                                    "allow_blob_public_access": True,
+                                },
                             ]
                         },
                     },
