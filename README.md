@@ -81,20 +81,3 @@ npm run dev
 * **Nginx reverse proxy in frontend container**: Serving the compiled Vite bundle via Nginx on `:3000` and proxying `/api/*` to `http://api:8000` keeps the production container tiny (~45 MB), runs as a non-root user, and avoids CORS or hardcoded host issues.
 
 ---
-
-## What's Unfinished & Next Steps
-
-* **Stretch goals omitted to keep core focused**: Live `boto3` collection mode, CIS Benchmark control mapping, cross-scan diffing (new/resolved/unchanged `FAIL`s), CSV export, and Trivy/SBOM supply-chain scanning in CI are natural next additions.
-* **Production database migration**: Add Alembic migrations and switch the storage adapter to PostgreSQL for multi-replica horizontal API scaling.
-
----
-
-## Time Breakdown & AI Assistant Usage
-
-* **Time Spent (~5.5 hours total)**:
-  * Scanner engine, check registry & 10 security checks: ~1.5 hours
-  * FastAPI endpoints, SQLite persistence & pytest suite: ~1.5 hours
-  * React + TypeScript dashboard & Vitest component tests: ~1.5 hours
-  * Dockerfiles, Docker Compose, GitHub Actions CI & `DEPLOY.md`: ~1.0 hour
-* **AI Assistant Usage**:
-  * Used AI assistance to scaffold boilerplate configuration files (Dockerfile multi-stage templates, GitHub Actions workflow YAML, CSS theme variables, and initial test fixtures), then reviewed, verified, and refined all check evaluation logic, edge-case handling, and API contracts manually.
