@@ -2,7 +2,7 @@
 
 Mini Gauntlet is a containerized multi-cloud security posture scanner with a **Python (FastAPI + SQLite)** backend, a **React + TypeScript** dashboard, **Docker Compose** orchestration, and a **GitHub Actions CI** pipeline.
 
-* **CI Pipeline (Green Run):** `https://github.com/mahesh0201/Mini-Gauntlet-Cloud-Posture-Scanner/actions/runs/45345138720/job/138277946427`
+* **CI Pipeline (Green Run):** `https://github.com/mahesh0201/Mini-Gauntlet-Cloud-Posture-Scanner/actions/runs/45370769418`
 
 ---
 
