@@ -81,6 +81,7 @@ npm run dev
 * **Nginx reverse proxy in frontend container**: Serving the compiled Vite bundle via Nginx on `:3000` and proxying `/api/*` to `http://api:8000` keeps the production container tiny (~45 MB), runs as a non-root user, and avoids CORS or hardcoded host issues.
 
 ---
+## AI Assistant Usage
 
 * **AI Assistant Usage**:
   * Used AI assistance to scaffold boilerplate configuration files (Dockerfile multi-stage templates, GitHub Actions workflow YAML, CSS theme variables, and initial test fixtures), then reviewed, verified, and refined all check evaluation logic, edge-case handling, and API contracts manually.
