@@ -4,8 +4,10 @@ import { FindingsPage, ScanDetail } from '../types';
 import { CustomSelect } from './CustomSelect';
 import { ScoreGauge } from './ScoreGauge';
 import { SeverityDistributionBar } from './SeverityDistributionBar';
+import { SkeletonFindingsTable } from './SkeletonLoader';
 import { getRemediationCommand } from './remediation';
 import { formatDuration, formatLocalTime, formatScore, scoreColorClass } from './ScansListPage';
+import { getScanName, setScanName } from '../utils/scanNames';
 
 interface Props {
   scanId: string;
@@ -26,6 +28,9 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedFindingId, setExpandedFindingId] = useState<string | null>(null);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [scanName, setScanNameState] = useState<string>(() => getScanName(scanId));
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
   const [page, setPage] = useState<number>(1);
   const pageSize = 25;
 
@@ -129,6 +134,14 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
   const activeFilterCount = [statusFilter, severityFilter, providerFilter, accountFilter].filter(Boolean).length;
   const totalPages = findingsPage ? Math.max(1, Math.ceil(findingsPage.total / pageSize)) : 1;
 
+  const handleSaveScanName = () => {
+    if (tempTitle.trim()) {
+      setScanName(scanId, tempTitle.trim());
+      setScanNameState(tempTitle.trim());
+    }
+    setIsEditingTitle(false);
+  };
+
   return (
     <div>
       <div className={`page-header ${detail?.status === 'RUNNING' ? 'scan-running-banner' : ''}`}>
@@ -136,9 +149,48 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
           <button type="button" className="btn" onClick={onBack} style={{ marginBottom: 12 }}>
             ← All Scans
           </button>
-          <h1 className="page-title">
-            Scan <span className="mono">{scanId}</span>
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {isEditingTitle ? (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className="filter-search-input"
+                  style={{ height: 32, width: 220, paddingLeft: 8, fontSize: 16, fontWeight: 700 }}
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveScanName();
+                    if (e.key === 'Escape') setIsEditingTitle(false);
+                  }}
+                />
+                <button type="button" className="btn btn-primary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={handleSaveScanName}>
+                  Save
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h1 className="page-title">{scanName}</h1>
+                <button
+                  type="button"
+                  className="edit-name-btn"
+                  title="Rename scan"
+                  onClick={() => {
+                    setTempTitle(scanName);
+                    setIsEditingTitle(true);
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <span className="mono" style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              ({scanId})
+            </span>
+          </div>
           {detail && (
             <p className="page-desc">
               Started {formatLocalTime(detail.started_at)} · Duration{' '}
@@ -154,7 +206,12 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
               onClick={handleExportCSV}
               title="Download findings as CSV"
             >
-              📥 Export CSV
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>Export CSV</span>
             </button>
           )}
           {detail && (
@@ -334,9 +391,12 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
                 >
                   <div className="account-top">
                     <span className="provider-pill">{acc.provider}</span>
-                    <span className={`score-pill ${scoreColorClass(acc.score)}`}>
-                      {formatScore(acc.score)}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {isSelected && <span className="selected-badge">SELECTED</span>}
+                      <span className={`score-pill ${scoreColorClass(acc.score)}`}>
+                        {formatScore(acc.score)}
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{acc.account_name}</div>
@@ -360,16 +420,27 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
 
           <div className="card">
             <div className="filter-bar">
-              {/* Free-text search input */}
-              <div className="filter-search-wrap">
-                <span className="filter-search-icon">🔍</span>
-                <input
-                  type="text"
-                  className="filter-search-input"
-                  placeholder="Search check ID, resource, details…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              {/* Free-text search input with label for consistent alignment */}
+              <div className="filter-group filter-search-group">
+                <label className="filter-label" htmlFor="filter-search-input">
+                  Search
+                </label>
+                <div className="filter-search-wrap">
+                  <span className="filter-search-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </span>
+                  <input
+                    id="filter-search-input"
+                    type="text"
+                    className="filter-search-input"
+                    placeholder="Search check ID, resource, details…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="filter-group">
@@ -515,12 +586,7 @@ export const ScanDetailPage: React.FC<Props> = ({ scanId, onBack }) => {
             </div>
 
             {loadingFindings && !findingsPage ? (
-              <div style={{ padding: '24px' }}>
-                <div className="skeleton-row" />
-                <div className="skeleton-row" />
-                <div className="skeleton-row" />
-                <div className="skeleton-row" />
-              </div>
+              <SkeletonFindingsTable />
             ) : !findingsPage || filteredFindings.length === 0 ? (
               <div className="empty-state">
                 {detail.status === 'RUNNING'
