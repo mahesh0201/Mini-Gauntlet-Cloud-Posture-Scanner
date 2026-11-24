@@ -83,5 +83,4 @@ npm run dev
 ---
 ## AI Assistant Usage
 
-* **AI Assistant Usage**:
-  * Used AI assistance to scaffold boilerplate configuration files (Dockerfile multi-stage templates, GitHub Actions workflow YAML, CSS theme variables, and initial test fixtures), then reviewed, verified, and refined all check evaluation logic, edge-case handling, and API contracts manually.
+* Used AI assistance to scaffold boilerplate configuration files (Dockerfile multi-stage templates, GitHub Actions workflow YAML, CSS theme variables, and initial test fixtures), then reviewed, verified, and refined all check evaluation logic, edge-case handling, and API contracts manually.
